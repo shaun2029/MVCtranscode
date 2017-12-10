@@ -126,7 +126,7 @@ struct sInputParams
     mfxI32  libvaBackend;
 #endif // defined(MFX_LIBVA_SUPPORT)
 
-    msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char     strSrcFile[2][MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
     sPluginParams pluginParams;
 
@@ -177,7 +177,7 @@ public:
     CDecodingPipeline();
     virtual ~CDecodingPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams, CFrameFifo *pFrameFifo);
+    virtual mfxStatus Init(sInputParams *pParams, CFrameFifo *pFrameFifo, mfxU16 srcIndex = 0);
     virtual mfxStatus RunDecoding(CEncodingPipeline *pEncPipeline);
     virtual void Close();
     virtual mfxStatus ResetDecoder(sInputParams *pParams);

@@ -42,17 +42,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, int *nArgPos, s
 	pParams->bUseHWLib = false;
     pParams->bUseFullColorRange = false;
 	pParams->bDots = false;
+	pParams->numViews = 0;
+
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
 #endif
 
     for (mfxU8 i = 1; i < nArgNum; i++)
     {
+		if ((pParams->numViews > 0) && (0 != msdk_strcmp(strInput[i], MSDK_STRING("-i")))) {
+			complete = true;
+		}
+
 		*nArgPos = i;
 
 		if (complete) {
 			break;
 		}
+
 
         if (MSDK_CHAR('-') != strInput[i][0])
         {
@@ -537,27 +544,28 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, int *nArgPos, s
                     }
                  }
                 else {
-                    msdk_printf(MSDK_STRING("error: option '-p' expects an argument\n"));
+                   PrintHelp(strInput[0], MSDK_STRING("error: option '-p' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->strSrcFile);
+					if (pParams->numViews == 0) {
+						msdk_opt_read(strInput[i], pParams->strSrcFile[0]);
+						pParams->numViews = 1;
+					}
+					else {
+						msdk_opt_read(strInput[i], pParams->strSrcFile[1]);
+						pParams->numViews = 2;
+					}
+
 					pParams->mode = MODE_FILE_DUMP;
-					complete = true;
                 }
                 else {
-                    msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
+                   PrintHelp(strInput[0], MSDK_STRING("error: option '-i' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('o'):
-                if (++i < nArgNum) {
-                    pParams->mode = MODE_FILE_DUMP;
-                    msdk_opt_read(strInput[i], pParams->strDstFile);
-                }
-                else {
-                    msdk_printf(MSDK_STRING("error: option '-o' expects an argument\n"));
-                }
+				complete = true;
                 break;
             case MSDK_CHAR('?'):
                 PrintHelp(strInput[0], NULL);
@@ -573,30 +581,42 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, int *nArgPos, s
         }
     }
 
-    if (0 == msdk_strlen(pParams->strSrcFile) && MFX_CODEC_CAPTURE != pParams->videoType)
+    if (0 == msdk_strlen(pParams->strSrcFile[0]) && MFX_CODEC_CAPTURE != pParams->videoType)
     {
-        msdk_printf(MSDK_STRING("error: source file name not found"));
+       PrintHelp(strInput[0], MSDK_STRING("error: source file name not found"));
         return MFX_ERR_UNSUPPORTED;
     }
+
+	if ((pParams->numViews > 1) && (0 == msdk_strlen(pParams->strSrcFile[1])))
+    {
+       PrintHelp(strInput[0], MSDK_STRING("error: second source file name not found"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+	if ((pParams->bIsMVC) && (pParams->numViews > 1))
+    {
+		PrintHelp(strInput[0], MSDK_STRING("MVC codec only supports one input file"));
+        return MFX_ERR_UNSUPPORTED;
+	}
 
     if (MFX_CODEC_CAPTURE == pParams->videoType)
     {
         if (!pParams->scrWidth || !pParams->scrHeight)
         {
-            msdk_printf(MSDK_STRING("error: for screen capture, width and height must be specified manually (-scr:w and -scr:h)"));
+           PrintHelp(strInput[0], MSDK_STRING("error: for screen capture, width and height must be specified manually (-scr:w and -scr:h)"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
     else if (pParams->scrWidth || pParams->scrHeight)
     {
-        msdk_printf(MSDK_STRING("error: width and height parameters are supported only by screen capture decoder"));
+       PrintHelp(strInput[0], MSDK_STRING("error: width and height parameters are supported only by screen capture decoder"));
         return MFX_ERR_UNSUPPORTED;
     }
 
 /*
     if ((pParams->mode == MODE_FILE_DUMP) && (0 == msdk_strlen(pParams->strDstFile)))
     {
-        msdk_printf(MSDK_STRING("error: destination file name not found"));
+       PrintHelp(strInput[0], MSDK_STRING("error: destination file name not found"));
         return MFX_ERR_UNSUPPORTED;
     }
 */
@@ -666,11 +686,12 @@ int main(int argc, char *argv[])
 {
 
     sInputParams        Params;   // input parameters from command line
-    CDecodingPipeline   Pipeline; // pipeline for decoding, includes input file reader, decoder and output file writer
+    CDecodingPipeline   Pipeline[2]; // pipeline for decoding, includes input file reader, decoder and output file writer
 	CEncodingPipeline   *pPipelineEncode;
 	CFrameFifo MemFrames;
 	HANDLE  hEncodeThread;
 	DWORD   dwEncodeThreadId;
+	mfxU16 numDecoders;
 
 	int argPos;
 
@@ -679,21 +700,37 @@ int main(int argc, char *argv[])
     sts = ParseInputString(argv, (mfxU8)argc, &argPos, &Params);
     MSDK_CHECK_STATUS(sts, "Decoder options incorrect");
 
-    if (Params.bIsMVC)
-        Pipeline.SetMultiView();
-
 	/* Multiview required twice the number of frames. */
-	if (Params.bIsMVC) {
-		Params.nFrames *= 2;
+
+	if ((Params.bIsMVC) || (Params.numViews < 2)) {
+		numDecoders = 1;
+
+		if ((Params.bIsMVC)) {
+			Pipeline[0].SetMultiView();
+			Params.nFrames *= 2;
+		}
+
+		sts = Pipeline[0].Init(&Params, &MemFrames);
+		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
+		// print stream info
+		Pipeline[0].PrintInfo();
 	}
+	else {
+		numDecoders = 2;
 
-	sts = Pipeline.Init(&Params, &MemFrames);
-    MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
+		sts = Pipeline[0].Init(&Params, &MemFrames);
+		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
-    // print stream info
-    Pipeline.PrintInfo();
+		sts = Pipeline[1].Init(&Params, &MemFrames, 1);
+		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
-	mfxFrameInfo frameInfo = Pipeline.GetFrameInfo();
+		// print stream info
+		Pipeline[0].PrintInfo();
+		// print stream info
+		Pipeline[1].PrintInfo();
+	}
+	
+	mfxFrameInfo frameInfo = Pipeline[0].GetFrameInfo();
 	sts = SetupEncoder(argc, argv, argPos, &frameInfo, pPipelineEncode, &MemFrames);
     MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
