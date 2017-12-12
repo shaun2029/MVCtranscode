@@ -1,6 +1,8 @@
 # MVCtranscode
 
-MVCtranscode can be used to transcode 3D/2D h264 streams with the aim of reducing the bitrate.
+MVCtranscode can be used to combine two elementry video streams to create a 3D MVC output.
+MVCtranscode can also transcode 3D/2D h264 streams with the aim of reducing the bitrate.
+
 By default Intel Quick Sync hardware accelerated encoding is used.
 Software only decoding/encoding options are offered for systems without Intel Quicksync support.
 
