@@ -678,19 +678,57 @@ DWORD WINAPI EncodeThreadRun( LPVOID lpParam )
 	return 0;
 }
 
+DWORD WINAPI DecodeThreadRun( LPVOID lpParam )
+{
+    mfxStatus sts = MFX_ERR_NONE; // return value check
+	CDecodingPipeline   *pPipeline = (CDecodingPipeline*)lpParam;
+
+	for (;;)
+    {
+        sts = pPipeline->RunDecoding();
+
+        if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_DEVICE_LOST == sts || MFX_ERR_DEVICE_FAILED == sts)
+        {
+            if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts)
+            {
+                msdk_printf(MSDK_STRING("\nERROR: Incompatible video parameters detected. Recovering...\n"));
+            }
+            else
+            {
+                msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned unexpected error. Recovering...\n"));
+                sts = pPipeline->ResetDevice();
+                MSDK_CHECK_STATUS(sts, "Pipeline.ResetDevice failed");
+            }
+
+            sts = pPipeline->ResetDecoder(NULL);
+            MSDK_CHECK_STATUS(sts, "Pipeline.ResetDecoder failed");
+            continue;
+        }
+        else
+        {
+            MSDK_CHECK_STATUS(sts, "Pipeline.RunDecoding failed");
+            break;
+        }
+    }
+
+	pPipeline->Close();
+    msdk_printf(MSDK_STRING("\nDecoding finished\n"));
+	return 0;
+}
+
 #if defined(_WIN32) || defined(_WIN64)
 int _tmain(int argc, TCHAR *argv[])
 #else
 int main(int argc, char *argv[])
 #endif
 {
-
     sInputParams        Params;   // input parameters from command line
     CDecodingPipeline   Pipeline[2]; // pipeline for decoding, includes input file reader, decoder and output file writer
 	CEncodingPipeline   *pPipelineEncode;
-	CFrameFifo MemFrames;
-	HANDLE  hEncodeThread;
-	DWORD   dwEncodeThreadId;
+	CFrameFifo *pMemFrames[2];
+
+	HANDLE  hEncodeThread, hDecodeThread[2];
+	DWORD   dwEncodeThreadId, dwDecodeThreadId[2];
 	mfxU16 numDecoders;
 
 	int argPos;
@@ -699,6 +737,9 @@ int main(int argc, char *argv[])
 
     sts = ParseInputString(argv, (mfxU8)argc, &argPos, &Params);
     MSDK_CHECK_STATUS(sts, "Decoder options incorrect");
+
+	pMemFrames[0] = new CFrameFifo;
+	pMemFrames[1] = new CFrameFifo;
 
 	/* Multiview required twice the number of frames. */
 
@@ -709,33 +750,44 @@ int main(int argc, char *argv[])
 			Pipeline[0].SetMultiView();
 			Params.nFrames *= 2;
 		}
-
-		sts = Pipeline[0].Init(&Params, &MemFrames);
-		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
-		// print stream info
-		Pipeline[0].PrintInfo();
 	}
 	else {
 		numDecoders = 2;
-
-		sts = Pipeline[0].Init(&Params, &MemFrames);
-		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
-
-		sts = Pipeline[1].Init(&Params, &MemFrames, 1);
-		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
-
-		// print stream info
-		Pipeline[0].PrintInfo();
-		// print stream info
-		Pipeline[1].PrintInfo();
 	}
-	
+
+	for (int i = 0; i < numDecoders; i++) {
+		sts = Pipeline[i].Init(&Params, pMemFrames[i], (mfxU16)i);
+		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
+
+		// print stream info
+		Pipeline[i].PrintInfo();
+	}
+
 	mfxFrameInfo frameInfo = Pipeline[0].GetFrameInfo();
-	sts = SetupEncoder(argc, argv, argPos, &frameInfo, pPipelineEncode, &MemFrames);
+	sts = SetupEncoder(argc, argv, argPos, &frameInfo, pPipelineEncode, pMemFrames);
     MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
-    // Create the thread to begin execution on its own.
 
+	for (int i = 0; i < numDecoders; i++) {
+		// Create the decoding thread to begin execution on its own.
+		hDecodeThread[i] = CreateThread( 
+			NULL,                   // default security attributes
+			0,                      // use default stack size  
+			DecodeThreadRun,       // thread function name
+			(void*)&Pipeline[i],          // argument to thread function 
+			0,                      // use default creation flags 
+			&dwDecodeThreadId[i]);   // returns the thread identifier 
+		
+		if (hDecodeThread[i] == NULL) 
+		{
+			msdk_printf(MSDK_STRING("\nERROR: Create decode thread failed!\n"));
+			ExitProcess(3);
+		}
+
+		msdk_printf(MSDK_STRING("Decoding started\n"));
+	}
+
+	// Create the encoding thread to begin execution on its own.
     hEncodeThread = CreateThread( 
         NULL,                   // default security attributes
         0,                      // use default stack size  
@@ -755,43 +807,14 @@ int main(int argc, char *argv[])
         ExitProcess(3);
     }
 
-    msdk_printf(MSDK_STRING("Decoding started\n"));
-
-    for (;;)
-    {
-        sts = Pipeline.RunDecoding(pPipelineEncode);
-
-        if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_DEVICE_LOST == sts || MFX_ERR_DEVICE_FAILED == sts)
-        {
-            if (MFX_ERR_INCOMPATIBLE_VIDEO_PARAM == sts)
-            {
-                msdk_printf(MSDK_STRING("\nERROR: Incompatible video parameters detected. Recovering...\n"));
-            }
-            else
-            {
-                msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned unexpected error. Recovering...\n"));
-                sts = Pipeline.ResetDevice();
-                MSDK_CHECK_STATUS(sts, "Pipeline.ResetDevice failed");
-            }
-
-            sts = Pipeline.ResetDecoder(&Params);
-            MSDK_CHECK_STATUS(sts, "Pipeline.ResetDecoder failed");
-            continue;
-        }
-        else
-        {
-            MSDK_CHECK_STATUS(sts, "Pipeline.RunDecoding failed");
-            break;
-        }
-    }
-
-    msdk_printf(MSDK_STRING("\nDecoding finished\n"));
-
-    WaitForSingleObject(hEncodeThread, 20000);
+    WaitForSingleObject(hEncodeThread, INFINITE);
 
     // Close all thread handles and free memory allocations.
 
     CloseHandle(hEncodeThread);
+	for (int i = 0; i < numDecoders; i++) {
+		//CloseHandle(hDecodeThread);
+	}
 
     return 0;
 }

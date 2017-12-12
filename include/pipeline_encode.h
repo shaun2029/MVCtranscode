@@ -200,7 +200,7 @@ public:
     CEncodingPipeline();
     virtual ~CEncodingPipeline();
 
-    virtual mfxStatus Init(sEncInputParams *pParams, CFrameFifo *pFrameFifo);
+    virtual mfxStatus Init(sEncInputParams *pParams, CFrameFifo *pFrameFifo[2]);
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(sEncInputParams* pParams);

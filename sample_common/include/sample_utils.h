@@ -126,8 +126,8 @@ class CFrameFifo
 		mfxU32 MaxFrames;
 		queue <PMemFrame> frameQueue;
 		queue <PMemFrame> frameIdleQueue;
-		void Lock() { WaitForSingleObject(hMutex, INFINITE); };
-		void UnLock() { ReleaseMutex(hMutex); };
+		void Lock();
+		void UnLock();
 };
 
 class CSmplYUVReader
@@ -138,7 +138,7 @@ public :
     virtual ~CSmplYUVReader();
 
     virtual void Close();
-    virtual mfxStatus Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010=false, CFrameFifo *pFrameFifo=NULL);
+    virtual mfxStatus Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010=false, CFrameFifo *pFrameFifo[2]=NULL);
     virtual mfxStatus LoadNextFrame(mfxFrameSurface1* pSurface);
     virtual void Reset();
     mfxU32 m_ColorFormat; // color format of input YUV data, YUV420 or NV12
@@ -147,7 +147,7 @@ protected:
 
     bool shouldShiftP010High;
     bool m_bInited;
-	CFrameFifo *pMemFrames;
+	CFrameFifo *pMemFrames[2];
 };
 
 class CSmplBitstreamWriter

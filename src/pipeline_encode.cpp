@@ -1055,7 +1055,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sEncInputParams *pParams)
     return sts;
 }
 
-mfxStatus CEncodingPipeline::Init(sEncInputParams *pParams, CFrameFifo *pFrameFifo)
+mfxStatus CEncodingPipeline::Init(sEncInputParams *pParams, CFrameFifo *pFrameFifo[2])
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
@@ -1207,7 +1207,7 @@ mfxStatus CEncodingPipeline::Init(sEncInputParams *pParams, CFrameFifo *pFrameFi
         // prepare input file reader
         sts = m_FileReader.Init(pParams->InputFiles,
             pParams->FileInputFourCC,readerShift, pFrameFifo);
-        MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
+			MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
     }
 
     sts = InitFileWriters(pParams);

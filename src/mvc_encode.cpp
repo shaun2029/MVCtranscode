@@ -47,14 +47,16 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 		return;
     }
 
-	msdk_printf(MSDK_STRING("MVCtranscode can be used to transcode 3D/2D h264 streams with the aim of reducing the bitrate.\n"));
+	msdk_printf(MSDK_STRING("MVCtranscode can be used to combine two elementry video streams to create a 3D MVC output.\n")); 
+	msdk_printf(MSDK_STRING("It can also transcode 3D/2D h264 streams with the aim of reducing the bitrate.\n"));
 	msdk_printf(MSDK_STRING("By default Intel Quick Sync hardware accelerated encoding is used.\n"));
-    msdk_printf(MSDK_STRING("Software only decoding/encoding options are offered for systems without Intel Quicksync support.\n\n"));
-	msdk_printf(MSDK_STRING("NOTE:\tThis application works best with 4th generation Intel Core processor(codename Haswell) onward.\n\n"));
-	msdk_printf(MSDK_STRING("\tAlthough not guaranteed, default settings are aimed at bluray compliance.\n"));
-	msdk_printf(MSDK_STRING("\tThese defaults are also geared towards high quality at a reasonable size.\n\n"));
+    msdk_printf(MSDK_STRING("Software only decoding/encoding options are offered for systems without Intel QuickSync support.\n\n"));
+	msdk_printf(MSDK_STRING("NOTE:\tWhen combining two streams to generate a 3D MVC output, the frame sizes,\n\tframe rates and codecs of the two input streams must match.\n\n"));
+	msdk_printf(MSDK_STRING("\tThis application works best with 4th generation Intel Core processor(codename Haswell) onward.\n\n"));
+	msdk_printf(MSDK_STRING("\tAlthough not guaranteed, default settings are aimed at bluray compliance.\n\n"));
+	msdk_printf(MSDK_STRING("\tThe default are geared towards high quality at a reasonable size.\n\n"));
 
-    msdk_printf(MSDK_STRING("Usage: %s <codecid> [<decode options>] -i InputBitstream <codecid> -o OutputBitstream [<encode options>]\n"), strAppName);
+    msdk_printf(MSDK_STRING("Usage: %s <codecid> [<decode options>] -i InputBitstream [-i InputBitstream] <codecid> -o OutputBitstream [<encode options>]\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported codecs (<codecid>):\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc - built-in Media SDK codecs\n"));
@@ -129,6 +131,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                              3: behaves like 2 -o opitons was used and then one -o\n\n"));
 	msdk_printf(MSDK_STRING("\n"));
 	msdk_printf(MSDK_STRING("Example:\n"));
+    msdk_printf(MSDK_STRING("  %s h264 -i in-left.264 -i in-right.264 mvc -o out-leftright.264\n"), strAppName);
+    msdk_printf(MSDK_STRING("  %s h264 -i in-left.264 -i in-right.264 mvc -o out.avc -o out.mvc -viewoutput\n"), strAppName);
     msdk_printf(MSDK_STRING("  %s mvc -i in.264 mvc -o out.264\n"), strAppName);
     msdk_printf(MSDK_STRING("  %s mvc -i in.264 mvc -o out.264 -qvbr 18 -b 20000 -MaxKbps 40000\n"), strAppName);
     msdk_printf(MSDK_STRING("  %s mvc -i in.264 mvc -viewoutput -o out.avc -o out.mvc\n"), strAppName);
@@ -137,7 +141,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("  %s mvc -i in.264 mvc -o out.264 -sw -u balanced\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
 	msdk_printf(MSDK_STRING("Default Equivalent (for 1920x1080 23.98 fps):\n"));
-    msdk_printf(MSDK_STRING("  %s mvc -sw -i in.264 mvc -o out.264 -hw -qvbr 17 -b 20000 -MaxKbps 40000 -CodecLevel 41 -g 24 -r 3 -num_slice 1 -u 1 -nobref -x 2\n"), strAppName);
+    msdk_printf(MSDK_STRING("  %s h264 -sw -i in-left.264 -i in-right.264 mvc -o out.264 -hw -qvbr 17 -b 20000 -MaxKbps 40000 -CodecLevel 41 -g 24 -r 3 -num_slice 1 -u 1 -nobref -x 2\n"), strAppName);
 }
 
 
@@ -1016,7 +1020,7 @@ CEncodingPipeline* CreatePipeline(const sEncInputParams& params)
 }
 
 #if defined(_WIN32) || defined(_WIN64)
-mfxStatus SetupEncoder(int argc, msdk_char *argv[], int argPos, mfxFrameInfo *pFrameInfo, CEncodingPipeline*& pPipeline, CFrameFifo *pFrameFifo)
+mfxStatus SetupEncoder(int argc, msdk_char *argv[], int argPos, mfxFrameInfo *pFrameInfo, CEncodingPipeline*& pPipeline, CFrameFifo **pFrameFifo)
 #else
 mfxStatus SetupEncoder(int argc, char *argv[])
 #endif

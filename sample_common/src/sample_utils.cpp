@@ -74,7 +74,8 @@ CSmplYUVReader::CSmplYUVReader()
     m_bInited = false;
     m_ColorFormat = MFX_FOURCC_YV12;
     shouldShiftP010High  = false;
-	pMemFrames = NULL;
+	pMemFrames[0] = NULL;
+	pMemFrames[1] = NULL;
 }
 
 mfxStatus SourceOpen(const wchar_t *filename, FILE **f)
@@ -179,7 +180,7 @@ int SourceRead(void *buffer, size_t elementSize, size_t count, FILE *f)
 	return numBytesRead;
 }
 
-mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010, CFrameFifo *pFrameFifo)
+mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010, CFrameFifo *pFrameFifo[2])
 {
     Close();
 
@@ -205,7 +206,8 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
         return MFX_ERR_UNSUPPORTED;
     }
 
-	pMemFrames = pFrameFifo;
+	pMemFrames[0] = pFrameFifo[0];
+	pMemFrames[1] = pFrameFifo[1];
 
     for (ls_iterator it = inputs.begin(); it != inputs.end(); it++)
     {
@@ -327,7 +329,12 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
     else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC || MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC)
     {
 		if (pMemFrames) {
-			if (!pMemFrames->Pop(pSurface)) {
+			if ((pSurface->Info.FrameId.ViewId == 1) && (pMemFrames[1])) {
+				if (!pMemFrames[1]->Pop(pSurface)) {
+					return MFX_TASK_BUSY;
+				}
+			}
+			else if (!pMemFrames[0]->Pop(pSurface)) {
 				return MFX_TASK_BUSY;
 			}
 		}
@@ -841,6 +848,16 @@ CFrameFifo::~CFrameFifo()
 
 	CloseHandle(hMutex);
 }
+
+void CFrameFifo::Lock() 
+{ 
+	WaitForSingleObject(hMutex, INFINITE); 
+};
+
+void CFrameFifo::UnLock() 
+{ 
+	ReleaseMutex(hMutex); 
+};
 
 bool CFrameFifo::Push(mfxFrameSurface1 *pSurface) {
 	bool res = true;

@@ -52,7 +52,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 #include "general_allocator.h"
-#include "pipeline_encode.h"
 
 enum MemType {
     SYSTEM_MEMORY = 0x00,
@@ -178,7 +177,7 @@ public:
     virtual ~CDecodingPipeline();
 
     virtual mfxStatus Init(sInputParams *pParams, CFrameFifo *pFrameFifo, mfxU16 srcIndex = 0);
-    virtual mfxStatus RunDecoding(CEncodingPipeline *pEncPipeline);
+    virtual mfxStatus RunDecoding();
     virtual void Close();
     virtual mfxStatus ResetDecoder(sInputParams *pParams);
     virtual mfxStatus ResetDevice();

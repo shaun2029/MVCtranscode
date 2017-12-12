@@ -161,12 +161,11 @@ CDecodingPipeline::~CDecodingPipeline()
     Close();
 }
 
-mfxStatus CDecodingPipeline::Init(sInputParams *pParams, CFrameFifo *pFrameFifo)
+mfxStatus CDecodingPipeline::Init(sInputParams *pParams, CFrameFifo *pFrameFifo, mfxU16 srcIndex)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
-
-    mfxStatus sts = MFX_ERR_NONE;
-
+	mfxStatus sts = MFX_ERR_NONE;
+	
     // prepare input stream file reader
     // for VP8 complete and single frame reader is a requirement
     // create reader that supports completeframe mode for latency oriented scenarios
@@ -235,7 +234,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams, CFrameFifo *pFrameFifo)
 
     if (MFX_CODEC_CAPTURE != pParams->videoType)
     {
-        sts = m_FileReader->Init(pParams->strSrcFile);
+        sts = m_FileReader->Init(pParams->strSrcFile[srcIndex]);
         MSDK_CHECK_STATUS(sts, "m_FileReader->Init failed");
     }
 
@@ -481,6 +480,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams, CFrameFifo *pFrameFifo)
 bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
 {
     bool bVppIsUsed = false;
+
     /* Re-size */
     if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
         (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
@@ -1683,7 +1683,7 @@ mfxStatus CDecodingPipeline::SyncOutputSurface(mfxU32 wait)
     return sts;
 }
 
-mfxStatus CDecodingPipeline::RunDecoding(CEncodingPipeline *pEncPipeline)
+mfxStatus CDecodingPipeline::RunDecoding()
 {
     mfxFrameSurface1*   pOutSurface = NULL;
     mfxBitstream*       pBitstream = &m_mfxBS;
@@ -1692,8 +1692,6 @@ mfxStatus CDecodingPipeline::RunDecoding(CEncodingPipeline *pEncPipeline)
     CTimeInterval<>     decodeTimer(m_bIsCompleteFrame);
     time_t start_time = time(0);
     MSDKThread * pDeliverThread = NULL;
-
-	//pEncodePipeline = pEncPipeline;
 
     if (m_eWorkMode == MODE_RENDERING) {
         m_pDeliverOutputSemaphore = new MSDKSemaphore(sts);
