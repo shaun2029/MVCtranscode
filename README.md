@@ -6,6 +6,7 @@ MVCtranscode can also transcode 3D/2D h264 streams with the aim of reducing the 
 By default Intel Quick Sync hardware accelerated encoding is used.
 Software only decoding/encoding options are offered for systems without Intel Quicksync support.
 
+`
 NOTE:   When combining two streams to generate a 3D MVC output, the frame sizes,
         frame rates and codecs of the two input streams must match.
 
@@ -14,7 +15,7 @@ NOTE:   When combining two streams to generate a 3D MVC output, the frame sizes,
         Although not guaranteed, default settings are aimed at bluray compliance.
 
         The default are geared towards high quality at a reasonable size.
-
+`
 
 ```
 MVCTranscode Version 1.0.0
