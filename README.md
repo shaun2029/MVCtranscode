@@ -20,7 +20,8 @@ NOTE:   When combining two streams to generate a 3D MVC output, the frame sizes,
 ```
 MVCTranscode Version 1.0.0
 
-Usage: MVCtranscode.exe <codecid> [<decode options>] -i InputBitstream [-i InputBitstream] <codecid> -o OutputBitstream [<encode options>]
+Usage: MVCtranscode.exe <codecid> [<decode options>] -i InputBitstream [-i InputBitstream] <codecid> 
+  -o OutputBitstream [<encode options>]
 
 Supported codecs (<codecid>):
    <codecid>=h264|mpeg2|vc1|mvc - built-in Media SDK codecs
