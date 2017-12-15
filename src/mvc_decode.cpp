@@ -725,7 +725,7 @@ int main(int argc, char *argv[])
     sInputParams        Params;   // input parameters from command line
     CDecodingPipeline   Pipeline[2]; // pipeline for decoding, includes input file reader, decoder and output file writer
 	CEncodingPipeline   *pPipelineEncode;
-	CFrameFifo *pMemFrames[2];
+	CFrameFifo *pMemFrames[2] = {0};
 
 	HANDLE  hEncodeThread, hDecodeThread[2];
 	DWORD   dwEncodeThreadId, dwDecodeThreadId[2];
@@ -737,9 +737,6 @@ int main(int argc, char *argv[])
 
     sts = ParseInputString(argv, (mfxU8)argc, &argPos, &Params);
     MSDK_CHECK_STATUS(sts, "Decoder options incorrect");
-
-	pMemFrames[0] = new CFrameFifo;
-	pMemFrames[1] = new CFrameFifo;
 
 	/* Multiview required twice the number of frames. */
 
@@ -756,6 +753,7 @@ int main(int argc, char *argv[])
 	}
 
 	for (int i = 0; i < numDecoders; i++) {
+		pMemFrames[0] = new CFrameFifo;
 		sts = Pipeline[i].Init(&Params, pMemFrames[i], (mfxU16)i);
 		MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
