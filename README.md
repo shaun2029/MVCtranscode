@@ -6,19 +6,6 @@ MVCtranscode can also transcode 3D/2D h264 streams with the aim of reducing the 
 By default Intel Quick Sync hardware accelerated encoding is used.
 Software only decoding/encoding options are offered for systems without Intel Quicksync support.
 
-NOTE:   This application works best with 4th generation Intel Core processor(codename Haswell) onward.
-
-        Although not guaranteed, default settings are aimed at bluray compliance.
-        These defaults are also geared towards high quality at a reasonable size.
-
-```
-MVCTranscode Version 1.0.0
-
-MVCtranscode can be used to combine two elementry video streams to create a 3D MVC output.
-It can also transcode 3D/2D h264 streams with the aim of reducing the bitrate.
-By default Intel Quick Sync hardware accelerated encoding is used.
-Software only decoding/encoding options are offered for systems without Intel QuickSync support.
-
 NOTE:   When combining two streams to generate a 3D MVC output, the frame sizes,
         frame rates and codecs of the two input streams must match.
 
@@ -27,6 +14,10 @@ NOTE:   When combining two streams to generate a 3D MVC output, the frame sizes,
         Although not guaranteed, default settings are aimed at bluray compliance.
 
         The default are geared towards high quality at a reasonable size.
+
+
+```
+MVCTranscode Version 1.0.0
 
 Usage: MVCtranscode.exe <codecid> [<decode options>] -i InputBitstream [-i InputBitstream] <codecid> -o OutputBitstream [<encode options>]
 
