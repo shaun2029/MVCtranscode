@@ -12,7 +12,23 @@ NOTE:   This application works best with 4th generation Intel Core processor(cod
         These defaults are also geared towards high quality at a reasonable size.
 
 ```
-Usage: MVCtranscode.exe <codecid> [<decode options>] -i InputBitstream <codecid> [<encode options>] -o OutputBitstream
+MVCTranscode Version 1.0.0
+
+MVCtranscode can be used to combine two elementry video streams to create a 3D MVC output.
+It can also transcode 3D/2D h264 streams with the aim of reducing the bitrate.
+By default Intel Quick Sync hardware accelerated encoding is used.
+Software only decoding/encoding options are offered for systems without Intel QuickSync support.
+
+NOTE:   When combining two streams to generate a 3D MVC output, the frame sizes,
+        frame rates and codecs of the two input streams must match.
+
+        This application works best with 4th generation Intel Core processor(codename Haswell) onward.
+
+        Although not guaranteed, default settings are aimed at bluray compliance.
+
+        The default are geared towards high quality at a reasonable size.
+
+Usage: MVCtranscode.exe <codecid> [<decode options>] -i InputBitstream [-i InputBitstream] <codecid> -o OutputBitstream [<encode options>]
 
 Supported codecs (<codecid>):
    <codecid>=h264|mpeg2|vc1|mvc - built-in Media SDK codecs
@@ -29,7 +45,8 @@ Decode & Encode Options:
 
 Decode Options:
    [-di bob/adi]             - enable deinterlacing BOB/ADI
-   [-n number] - number of frames to process
+   [-n number]               - number of frames to process
+   [-dots]                   - output a dot to stderr, every 20 frames.
 
 
 Encode Options:
@@ -69,21 +86,25 @@ Encode Options:
    [-GopOptFlag:closed]     - closed gop. open gop by default
    [-GopOptFlag:strict]     - strict gop
    [-BufferSizeInKB ]       - represents the maximum possible size of any compressed frames
-   [-MaxKbps ]              - for variable bitrate control, specifies the maximum bitrate at which                             the encoded data enters the Video Buffering Verifier buffer
-   [-viewoutput] - instruct the MVC encoder to output each view in separate bitstream buffer. Depending on the number of -o options behaves as follows:
-                   1: two views are encoded in single file
-                   2: two views are encoded in separate files
-                   3: behaves like 2 -o opitons was used and then one -o
+   [-MaxKbps ]              - for variable bitrate control, specifies the maximum bitrate at which
+                              the encoded data enters the Video Buffering Verifier buffer
+   [-viewoutput]            - instruct the MVC encoder to output each view in separate bitstream buffer.
+                              Depending on the number of -o options behaves as follows:
+                              1: two views are encoded in single file
+                              2: two views are encoded in separate files
+                              3: behaves like 2 -o opitons was used and then one -o
 
 
 Example:
+  MVCtranscode.exe h264 -i in-left.264 -i in-right.264 mvc -o out-leftright.264
+  MVCtranscode.exe h264 -i in-left.264 -i in-right.264 mvc -o out.avc -o out.mvc -viewoutput
   MVCtranscode.exe mvc -i in.264 mvc -o out.264
   MVCtranscode.exe mvc -i in.264 mvc -o out.264 -qvbr 18 -b 20000 -MaxKbps 40000
   MVCtranscode.exe mvc -i in.264 mvc -viewoutput -o out.avc -o out.mvc
 
 Software decoding/encoding:
-  MVCtranscode.exe mvc -sw -i in.264 mvc -o out.264 -sw -vbr -u balanced -num_slice 0
+  MVCtranscode.exe mvc -i in.264 mvc -o out.264 -sw -u balanced
 
 Default Equivalent (for 1920x1080 23.98 fps):
-  MVCtranscode.exe mvc -sw -i in.264 mvc -o out.264 -hw -qvbr 17 -b 20000 -MaxKbps 40000 -CodecLevel 41 -g 24 -r 3 -num_slice 1 -u 1 -nobref -x 2
+  MVCtranscode.exe h264 -sw -i in-left.264 -i in-right.264 mvc -o out.264 -hw -qvbr 17 -b 20000 -MaxKbps 40000 -CodecLevel 41 -g 24 -r 3 -num_slice 1 -u 1 -nobref -x 2
 ```  
