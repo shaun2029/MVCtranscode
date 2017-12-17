@@ -102,6 +102,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] Enable or disable GPU copy mode\n"));
+	msdk_printf(MSDK_STRING("   [-icq quality]           - quality controlled bitrate control, quality in range [11,51] where 11 is the highest quality.\n"));
     msdk_printf(MSDK_STRING("   [-qvbr quality]          - quality controlled variable bitrate control, quality in range [11,51] where 11 is the highest quality.\n"));
     msdk_printf(MSDK_STRING("                              Bit rate (-b) and max bit rate (-MaxKbps) are used by qvbr bitrate control.\n"));
     msdk_printf(MSDK_STRING("                              This algorithm tries to achieve the subjective quality with minimum no. of bits while trying to keep\n"));
@@ -315,9 +316,25 @@ static mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, mfxU8 ar
                 return MFX_ERR_UNSUPPORTED;
             }
 
-			if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nQVBRQuality))
+			if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nBRCQuality))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Quality for qvpr is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-icq")))
+        {
+            pParams->nRateControlMethod = MFX_RATECONTROL_ICQ;
+
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for icq"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+			if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nBRCQuality))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Quality for icq is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -1052,7 +1069,7 @@ mfxStatus SetupEncoder(int argc, char *argv[])
 	Params.bUseHWLib = true;
 	Params.MaxKbps = 0;
 	Params.nBitRate = 0;
-	Params.nQVBRQuality = 17;
+	Params.nBRCQuality = 17;
 	Params.nGopPicSize = (mfxU16)(Params.dFrameRate + 0.5);
 	Params.nGopRefDist = 3;
 	Params.nAsyncDepth = 8;

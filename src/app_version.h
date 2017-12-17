@@ -11,7 +11,7 @@ All rights reserved.
 #endif
 
 #ifndef APP_MINOR
-#define APP_MINOR 0
+#define APP_MINOR 1
 #endif
 
 #ifndef APP_RELEASE

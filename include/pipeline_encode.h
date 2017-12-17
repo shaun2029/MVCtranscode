@@ -113,7 +113,7 @@ struct sEncInputParams
     mfxU16 nQPP;
     mfxU16 nQPB;
 
-	mfxU16 nQVBRQuality;
+	mfxU16 nBRCQuality;
 
     mfxU16 nGPB;
     mfxU16 nExtBRC;
