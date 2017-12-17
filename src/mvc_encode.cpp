@@ -996,7 +996,7 @@ static mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, mfxU8 ar
 
 	if ((pParams->nRateControlMethod == 0) && (pParams->bUseHWLib))
     {
-        pParams->nRateControlMethod = MFX_RATECONTROL_QVBR;
+        pParams->nRateControlMethod = MFX_RATECONTROL_ICQ;
     }
 		
 	if (pParams->nRateControlMethod == 0)
