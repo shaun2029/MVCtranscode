@@ -37,6 +37,38 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define MOD_ENC_PARSE_INPUT
 #endif
 
+static void init_video_param(mfxVideoParam *videoParam)
+{
+    if (videoParam == NULL)
+    {
+        return;
+    }
+
+    memset(videoParam, 0, sizeof(mfxVideoParam));
+    videoParam->mfx.CodecId                 = MFX_CODEC_AVC;
+    videoParam->mfx.CodecLevel              = MFX_LEVEL_AVC_41;
+    videoParam->mfx.CodecProfile            = MFX_PROFILE_AVC_STEREO_HIGH;
+    videoParam->mfx.RateControlMethod       = MFX_RATECONTROL_VBR;
+    videoParam->mfx.TargetUsage             = MFX_TARGETUSAGE_BALANCED;
+    videoParam->mfx.TargetKbps              = 5000;
+    videoParam->mfx.GopOptFlag              = MFX_GOP_CLOSED;
+    videoParam->mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
+    videoParam->mfx.FrameInfo.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
+    videoParam->mfx.FrameInfo.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
+    videoParam->mfx.FrameInfo.FrameRateExtN = 25;
+    videoParam->mfx.FrameInfo.FrameRateExtD = 1;
+    videoParam->mfx.FrameInfo.Width         = 1920;
+    videoParam->mfx.FrameInfo.CropW         = 1920;
+    videoParam->mfx.FrameInfo.AspectRatioW  = 1;
+    videoParam->mfx.FrameInfo.Height        = 1088;
+    videoParam->mfx.FrameInfo.CropH         = 1080;
+    videoParam->mfx.FrameInfo.AspectRatioH  = 1;
+    videoParam->AsyncDepth                  = 8;
+	videoParam->mfx.GopPicSize				= 25;
+	videoParam->mfx.GopRefDist				= 3;
+    videoParam->IOPattern                   = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+}
+
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
     msdk_printf(MSDK_STRING("MVCTranscode Version %s\n\n"), GetAppVersion().c_str());
@@ -56,6 +88,10 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 	msdk_printf(MSDK_STRING("\tAlthough not guaranteed, default settings are aimed at bluray compliance.\n\n"));
 	msdk_printf(MSDK_STRING("\tThe default are geared towards high quality at a reasonable size.\n\n"));
 
+    msdk_printf(MSDK_STRING("Usage: %s -help\n"), strAppName);
+    msdk_printf(MSDK_STRING("   Print this help.\n\n"));
+    msdk_printf(MSDK_STRING("Usage: %s -caps\n"), strAppName);
+    msdk_printf(MSDK_STRING("   Print supported capabilities.\n\n"));
     msdk_printf(MSDK_STRING("Usage: %s <codecid> [<decode options>] -i InputBitstream [-i InputBitstream] <codecid> -o OutputBitstream [<encode options>]\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported codecs (<codecid>):\n"));
@@ -102,7 +138,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] Enable or disable GPU copy mode\n"));
-	msdk_printf(MSDK_STRING("   [-icq quality]           - quality controlled bitrate control, quality in range [11,51] where 11 is the highest quality.\n"));
     msdk_printf(MSDK_STRING("   [-qvbr quality]          - quality controlled variable bitrate control, quality in range [11,51] where 11 is the highest quality.\n"));
     msdk_printf(MSDK_STRING("                              Bit rate (-b) and max bit rate (-MaxKbps) are used by qvbr bitrate control.\n"));
     msdk_printf(MSDK_STRING("                              This algorithm tries to achieve the subjective quality with minimum no. of bits while trying to keep\n"));
@@ -145,6 +180,53 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("  %s h264 -sw -i in-left.264 -i in-right.264 mvc -o out.264 -hw -qvbr 17 -b 20000 -MaxKbps 40000 -CodecLevel 41 -g 24 -r 3 -num_slice 1 -u 1 -nobref -x 2\n"), strAppName);
 }
 
+void PrintCaps() {
+	mfxSession session;
+	mfxVersion qsv_software_version = {0}, qsv_hardware_version = {0};
+
+	// check for software fallback
+	if (MFXInit(MFX_IMPL_SOFTWARE, NULL, &session) == MFX_ERR_NONE)
+	{
+		// Media SDK software found, but check that our minimum is supported
+		MFXQueryVersion(session, &qsv_software_version);
+		MFXClose(session);
+		fprintf(stdout, "software: yes\n");
+		fprintf(stdout, "software version: %d.%d\n", qsv_software_version.Major, qsv_software_version.Minor);
+		fprintf(stdout, "software version#: %d\n", qsv_software_version.Version);
+	}
+	else {
+		fprintf(stdout, "software: no\n");
+	}
+
+	if (MFXInit(MFX_IMPL_HARDWARE, NULL, &session) == MFX_ERR_NONE)
+	{
+		// Media SDK hardware found, but check that our minimum is supported
+		MFXQueryVersion(session, &qsv_hardware_version);
+		fprintf(stdout, "hardware: yes\n");
+		fprintf(stdout, "hardware version: %d.%d\n", qsv_hardware_version.Major, qsv_hardware_version.Minor);
+		fprintf(stdout, "hardware version#: %d\n", qsv_hardware_version.Version);
+
+		mfxVideoParam inputParam = {0}, videoParam = {0};
+		init_video_param(&inputParam);
+
+		inputParam.mfx.RateControlMethod = MFX_RATECONTROL_QVBR;
+		videoParam = inputParam;
+		if (MFXVideoENCODE_Query(session, &inputParam, &videoParam) >= MFX_ERR_NONE) {
+			if ((videoParam.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)  && (inputParam.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)) {
+				fprintf(stdout, "qvbr: yes\n");
+			}
+			else {
+				fprintf(stdout, "qvbr: no\n");
+			}
+		}
+
+		MFXClose(session);
+	}
+	else {
+		fprintf(stdout, "hardware: no\n");
+	}
+	exit(0);
+}
 
 static mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, mfxU8 argPos, sEncInputParams* pParams)
 {
@@ -295,7 +377,6 @@ static mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, mfxU8 ar
                 return MFX_ERR_UNSUPPORTED;
             }
 
-			pParams->nRateControlMethod = MFX_RATECONTROL_LA;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nLADepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Look Ahead Depth is invalid"));
@@ -319,22 +400,6 @@ static mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, mfxU8 ar
 			if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nBRCQuality))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Quality for qvpr is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-icq")))
-        {
-            pParams->nRateControlMethod = MFX_RATECONTROL_ICQ;
-
-            if(i + 1 >= nArgNum)
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for icq"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-
-			if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nBRCQuality))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Quality for icq is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -996,14 +1061,13 @@ static mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, mfxU8 ar
 
 	if ((pParams->nRateControlMethod == 0) && (pParams->bUseHWLib))
     {
-        pParams->nRateControlMethod = MFX_RATECONTROL_ICQ;
+        pParams->nRateControlMethod = MFX_RATECONTROL_QVBR;
     }
 		
 	if (pParams->nRateControlMethod == 0)
     {
         pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
     }
-
     if(pParams->UseRegionEncode)
     {
         if(pParams->CodecId != MFX_CODEC_HEVC)
@@ -1064,7 +1128,7 @@ mfxStatus SetupEncoder(int argc, char *argv[])
 		break;
 	}
 	
-	Params.CodecLevel = 41;
+	Params.CodecLevel = MFX_LEVEL_AVC_41;
 	Params.nBRefType = MFX_B_REF_OFF;
 	Params.bUseHWLib = true;
 	Params.MaxKbps = 0;
@@ -1073,7 +1137,7 @@ mfxStatus SetupEncoder(int argc, char *argv[])
 	Params.nGopPicSize = (mfxU16)(Params.dFrameRate + 0.5);
 	Params.nGopRefDist = 3;
 	Params.nAsyncDepth = 8;
-	Params.nNumRefFrame = 2;
+	Params.nNumRefFrame = 3;
 	Params.nTargetUsage = 1;
 	Params.nNumSlice = 1;
 

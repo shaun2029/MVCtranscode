@@ -92,6 +92,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, int *nArgPos, s
             PrintHelp(strInput[0], NULL);
 			exit(0);
         }
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-caps")))
+		{
+			PrintCaps();
+			exit(0);
+		}
 		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sw")))
         {
             pParams->bUseHWLib = false;

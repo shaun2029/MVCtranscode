@@ -404,6 +404,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sEncInputParams *pInParams)
     {
 		m_mfxEncParams.mfx.ICQQuality = pInParams->nBRCQuality;
     }
+	else if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+    {
+		m_mfxEncParams.mfx.ICQQuality = pInParams->nBRCQuality;
+    }
 	else if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
         m_mfxEncParams.mfx.TargetKbps = pInParams->nBitRate; // in Kbps
@@ -1934,10 +1938,16 @@ void CEncodingPipeline::PrintInfo()
 		msdk_printf(MSDK_STRING("Bit rate(Kbps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps, m_mfxEncParams.mfx.MaxKbps);
 		msdk_printf(MSDK_STRING("Max rate(Kbps)\t%d\n"), m_mfxEncParams.mfx.MaxKbps);
     }
-    if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+    else if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
     {
 		msdk_printf(MSDK_STRING("Bit rate control\tICQ\n"));
 		msdk_printf(MSDK_STRING("ICQ Quality\t%d\n"), m_mfxEncParams.mfx.ICQQuality);
+    }
+    else if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+    {
+		msdk_printf(MSDK_STRING("Bit rate control\tLA_ICQ\n"));
+		msdk_printf(MSDK_STRING("LA_ICQ Quality\t%d\n"), m_mfxEncParams.mfx.ICQQuality);
+		msdk_printf(MSDK_STRING("LA_ICQ Depth\t%d\n"), m_CodingOption2.LookAheadDepth);
     }
     else if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
