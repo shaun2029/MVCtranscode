@@ -47,7 +47,7 @@ static void init_video_param(mfxVideoParam *videoParam)
     memset(videoParam, 0, sizeof(mfxVideoParam));
     videoParam->mfx.CodecId                 = MFX_CODEC_AVC;
     videoParam->mfx.CodecLevel              = MFX_LEVEL_AVC_41;
-    videoParam->mfx.CodecProfile            = MFX_PROFILE_AVC_STEREO_HIGH;
+    videoParam->mfx.CodecProfile            = MFX_PROFILE_AVC_HIGH;
     videoParam->mfx.RateControlMethod       = MFX_RATECONTROL_VBR;
     videoParam->mfx.TargetUsage             = MFX_TARGETUSAGE_BALANCED;
     videoParam->mfx.TargetKbps              = 5000;
@@ -212,7 +212,7 @@ void PrintCaps() {
 		inputParam.mfx.RateControlMethod = MFX_RATECONTROL_QVBR;
 		videoParam = inputParam;
 		if (MFXVideoENCODE_Query(session, &inputParam, &videoParam) >= MFX_ERR_NONE) {
-			if ((videoParam.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)  && (inputParam.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)) {
+			if (videoParam.mfx.RateControlMethod == MFX_RATECONTROL_QVBR) {
 				fprintf(stdout, "qvbr: yes\n");
 			}
 			else {
@@ -225,6 +225,7 @@ void PrintCaps() {
 	else {
 		fprintf(stdout, "hardware: no\n");
 	}
+
 	exit(0);
 }
 
@@ -1137,7 +1138,7 @@ mfxStatus SetupEncoder(int argc, char *argv[])
 	Params.nGopPicSize = (mfxU16)(Params.dFrameRate + 0.5);
 	Params.nGopRefDist = 3;
 	Params.nAsyncDepth = 8;
-	Params.nNumRefFrame = 3;
+	Params.nNumRefFrame = 2;
 	Params.nTargetUsage = 1;
 	Params.nNumSlice = 1;
 
