@@ -1,7 +1,10 @@
 MVCtranscode Changelog
 
-MVCtranscode 1.1 2017/12/20
+MVCtranscode 1.1.2 2017/12/20
+	Encoder: Fix MVC Intel Media SDK encoding issues by removing B-frames and enabling QSV-FF Low Power Mode.
+
+MVCtranscode 1.1.1 2017/12/20
 	Encoder: Added hardware acceleration capabilities test.
-	Encoder: Fix MVC encoding issues by removing B-frames by default.
+	Encoder: Attempt to fix MVC Intel Media SDK encoding issues by removing B-frames by default.
 
 MVCtranscode 1.0 2017/12/17

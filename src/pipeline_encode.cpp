@@ -1985,6 +1985,16 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("Ref dist\t%d\n"), m_mfxEncParams.mfx.GopRefDist);
     msdk_printf(MSDK_STRING("Ref number\t%d\n"), m_mfxEncParams.mfx.NumRefFrame);
     msdk_printf(MSDK_STRING("Idr Interval\t%d\n"), m_mfxEncParams.mfx.IdrInterval);
+	if (m_CodingOption2.BRefType ==  MFX_B_REF_PYRAMID) {
+		msdk_printf(MSDK_STRING("B_REF Mode\tpyramid\n"));
+	}
+	else if (m_CodingOption2.BRefType ==  MFX_B_REF_OFF) {
+		msdk_printf(MSDK_STRING("B_REF Mode\toff\n"));
+	}
+	else {
+		msdk_printf(MSDK_STRING("B_REF Mode\tdefault\n"));
+	}
+
 	if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
 		msdk_printf(MSDK_STRING("QSV-FF Low Power Mode\ton\n"));
 	}
