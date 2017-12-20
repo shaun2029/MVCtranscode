@@ -1136,11 +1136,12 @@ mfxStatus SetupEncoder(int argc, char *argv[])
 	Params.nBitRate = 0;
 	Params.nBRCQuality = 17;
 	Params.nGopPicSize = (mfxU16)(Params.dFrameRate + 0.5);
-	Params.nGopRefDist = 3;
+	Params.nGopRefDist = 1;
 	Params.nAsyncDepth = 8;
 	Params.nNumRefFrame = 2;
 	Params.nTargetUsage = 1;
 	Params.nNumSlice = 1;
+	Params.enableQSVFF = false;
 
 	sts = ParseInputString(argv, (mfxU8)argc, (mfxU8)argPos, &Params);
     MSDK_CHECK_STATUS(sts, "Encoder options incorrect");
