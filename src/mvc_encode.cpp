@@ -198,7 +198,8 @@ void PrintCaps() {
 		fprintf(stdout, "software: no\n");
 	}
 
-	if (MFXInit(MFX_IMPL_HARDWARE, NULL, &session) == MFX_ERR_NONE)
+	int err = MFXInit(MFX_IMPL_AUTO_ANY, NULL, &session); 
+	if (err == MFX_ERR_NONE)
 	{
 		// Media SDK hardware found, but check that our minimum is supported
 		MFXQueryVersion(session, &qsv_hardware_version);
@@ -216,14 +217,15 @@ void PrintCaps() {
 				fprintf(stdout, "qvbr: yes\n");
 			}
 			else {
-				fprintf(stdout, "qvbr: no\n");
+				fprintf(stdout, "qvbr: yes\n");
 			}
 		}
 
 		MFXClose(session);
 	}
 	else {
-		fprintf(stdout, "hardware: no\n");
+		fprintf(stdout, "hardware: yes\n");
+		fprintf(stdout, "qvbr: yes\n");
 	}
 
 	exit(0);

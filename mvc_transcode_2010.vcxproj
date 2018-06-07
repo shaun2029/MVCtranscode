@@ -173,7 +173,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\sample_common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\sample_common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>TIME_STATS;WIN64;_DEBUG;_CONSOLE;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -186,8 +186,8 @@
     </ClCompile>
     <Link>
       <AdditionalOptions>/DYNAMICBASE /NXCOMPAT %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>libmfx.lib;dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;dwmapi.lib;igfx_s3dcontrol.lib;comsuppw.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(INTELMEDIASDKROOT)\igfx_s3dcontrol\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx.lib;dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;dwmapi.lib;comsuppw.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib;msvcrtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>

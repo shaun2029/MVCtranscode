@@ -15,7 +15,7 @@ All rights reserved.
 #endif
 
 #ifndef APP_RELEASE
-#define APP_RELEASE 2
+#define APP_RELEASE 3
 #endif
 
 static msdk_string GetAppVersion()
